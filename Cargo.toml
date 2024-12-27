@@ -1,0 +1,12 @@
+[package]
+name = "p2p-tls"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Bicheka/p2p-tls"
+description = "Easy to implement security for p2p connections"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[dependencies]
