@@ -10,3 +10,6 @@ description = "Easy to implement security for p2p connections"
 maintenance = { status = "actively-developed" }
 
 [dependencies]
+rand = "0.8.5"
+tokio = "1.42.0"
+x25519-dalek = "2.0.1"
