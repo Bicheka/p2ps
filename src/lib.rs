@@ -1,25 +1,20 @@
-use std::{clone, net::TcpStream};
-use tokio::io::{AsyncRead, AsyncWrite};
 use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
-struct P2pTlsStream<T> {
-    inner: T
+
+pub enum Stream {
+    SyncTCP(std::net::TcpStream),
+    AsyncTCP(tokio::net::TcpStream)
 }
 
-impl<T> P2pTlsStream<T> {
-    pub fn new(inner: T, shared_secret: &[u8]) {
-        todo!()
-    }
-    fn encrypt() {
-        todo!()
-    }
-    fn decrypt() {
-        todo!()
-    }
+pub struct P2pTlsStream {
+    stream: Stream
 }
 
-pub trait SharePublicKey<T, E> {
-    fn send_public_key(&self) -> Result<T, E>;
-    fn recieve_public_key();
+impl P2pTlsStream {
+    pub fn new(stream: Stream) -> Self {
+        Self {
+            stream
+        }
+    }
 }
 
 pub struct DhaKeys {
@@ -42,12 +37,13 @@ impl DhaKeys {
     }
 }
 
+pub trait SharePublicKey<T, E> {
+    fn send_public_key(&self) -> Result<T, E>;
+    fn recieve_public_key();
+}
+
 // Todo implement functionality to share public secret through tokio TcpStream
-impl <T, E, S> SharePublicKey<T, E> for P2pTlsStream<S> 
-
-    where S: // some 
-
-{
+impl <T, E> SharePublicKey<T, E> for P2pTlsStream {
     fn send_public_key(&self) -> Result<T, E> {
         todo!()
     }

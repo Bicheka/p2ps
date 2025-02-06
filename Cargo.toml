@@ -11,5 +11,5 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 rand = "0.8.5"
-tokio = "1.42.0"
+tokio = {version = "1.42.0", features = ["full"]}
 x25519-dalek = "2.0.1"
