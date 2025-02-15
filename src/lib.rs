@@ -1,3 +1,5 @@
+use std::clone;
+
 use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
 
 pub enum Stream {
@@ -18,7 +20,7 @@ impl P2pTlsStream {
 }
 
 pub struct Keys {
-    pub secret: EphemeralSecret,
+    secret: EphemeralSecret,
     pub public: PublicKey
 }
 
@@ -26,9 +28,10 @@ impl Keys {
     pub fn generate_keys() -> Self{
         let rng = rand::thread_rng();
         let secret = EphemeralSecret::random_from_rng(rng);
+        let public = PublicKey::from(&secret);
         Self {
-            public: PublicKey::from(&secret),
-            secret,
+            secret, 
+            public
         }
     }
 
