@@ -17,12 +17,12 @@ impl P2pTlsStream {
     }
 }
 
-pub struct DhaKeys {
+pub struct Keys {
     pub secret: EphemeralSecret,
     pub public: PublicKey
 }
 
-impl DhaKeys {
+impl Keys {
     pub fn generate_keys() -> Self{
         let rng = rand::thread_rng();
         let secret = EphemeralSecret::random_from_rng(rng);
