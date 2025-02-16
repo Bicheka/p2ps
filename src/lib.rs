@@ -1,24 +1,7 @@
-use std::clone;
-
 use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
-
-pub enum Stream {
-    SyncTCP(std::net::TcpStream),
-    AsyncTCP(tokio::net::TcpStream)
-}
-
-pub struct P2pTlsStream {
-    stream: Stream
-}
-
-impl P2pTlsStream {
-    pub fn new(stream: Stream) -> Self {
-        Self {
-            stream
-        }
-    }
-}
-
+use sha2::Sha256;
+use hkdf::Hkdf;
+use aes_gcm::{Aes256Gcm, Key};
 pub struct Keys {
     secret: EphemeralSecret,
     pub public: PublicKey
@@ -30,28 +13,29 @@ impl Keys {
         let secret = EphemeralSecret::random_from_rng(rng);
         let public = PublicKey::from(&secret);
         Self {
-            secret, 
+            secret,
             public
         }
     }
 
-    pub fn generate_secret(secret: EphemeralSecret, their_public: &PublicKey) -> SharedSecret{
-        secret.diffie_hellman(their_public)
+    pub fn generate_shared_secret(self, their_public: &PublicKey) -> SharedSecret{
+        self.secret.diffie_hellman(their_public)
     }
 }
 
-pub trait SharePublicKey<T, E> {
-    fn send_public_key(&self) -> Result<T, E>;
-    fn recieve_public_key();
+fn derive_keys(shared_secret: &[u8]) -> (Key<Aes256Gcm>, [u8; 12]) {
+    let hk = Hkdf::<Sha256>::new(None, shared_secret);
+    let mut key = [0u8; 32];
+    let mut nonce = [0u8; 12];
+    hk.expand(b"encryption key", &mut key).expect("HDKF failed");
+    hk.expand(b"nonce", &mut nonce).expect("HKDF failed");
+    (Key::<Aes256Gcm>::from_slice(&key).to_owned(), nonce)
 }
 
-// Todo implement functionality to share public secret through tokio TcpStream
-impl <T, E> SharePublicKey<T, E> for P2pTlsStream {
-    fn send_public_key(&self) -> Result<T, E> {
-        todo!()
-    }
+fn encrypt() {
+    todo!()
+}
 
-    fn recieve_public_key() {
-        todo!()
-    }
+fn decrypt() {
+    todo!()
 }
