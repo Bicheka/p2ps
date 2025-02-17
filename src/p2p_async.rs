@@ -1,11 +1,11 @@
-use aes_gcm::Nonce;
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::{decrypt, encrypt, P2pTls};
 
 impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
-    pub fn new_async(stream: T, shared_key: [u8; 32]) -> Self {
-        Self { stream, shared_key }
+    pub fn new_async(stream: T, key: Key<Aes256Gcm>) -> Self {
+        Self { stream, key }
     }
 
     // TODO:Handshake function to send and recieve public keys throught tcp
@@ -13,7 +13,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
     /// Takes data, encrypts it, and then writes a nonce, the length of the data and the actual data
     /// to the stream
     pub async fn write_async(&mut self, data: &[u8]) -> std::io::Result<()> {
-        let (encrypted_data, nonce) = encrypt(&self.shared_key, data);
+        let (encrypted_data, nonce) = encrypt(&self.key, data);
         // send nonce
         self.stream.write_all(&nonce).await?;
 
@@ -41,7 +41,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
         let mut encrypted_data = vec![0u8; length];
         self.stream.read_exact(&mut encrypted_data).await?;
 
-        let data = decrypt(&self.shared_key, &encrypted_data, &nonce_buf);
+        let data = decrypt(&self.key, &encrypted_data, &nonce_buf);
 
         Ok(data)
     }
