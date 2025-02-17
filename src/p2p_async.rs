@@ -1,6 +1,7 @@
-use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
+use aes_gcm::Nonce;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::{encrypt, P2pTls};
+use crate::{decrypt, encrypt, P2pTls};
 
 impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
     pub fn new_async(stream: T, shared_key: [u8; 32]) -> Self {
@@ -27,6 +28,21 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
     }
 
     pub async fn recieve_encrypted_async(&mut self) -> std::io::Result<Vec<u8>> {
-        todo!()
+        // Read nonce
+        let mut nonce_buf = [0u8; 12];
+        self.stream.read_exact(&mut nonce_buf).await?;
+        //
+        // u32 = 8*4
+        let mut length_buf = [0u8; 4];
+        self.stream.read_exact(&mut length_buf).await?;
+        let length = u32::from_be_bytes(length_buf) as usize;
+
+        // Read data
+        let mut encrypted_data = vec![0u8; length];
+        self.stream.read_exact(&mut encrypted_data).await?;
+
+        let data = decrypt(&self.shared_key, &encrypted_data, &nonce_buf);
+
+        Ok(data)
     }
 }
