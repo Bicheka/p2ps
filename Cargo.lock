@@ -53,6 +53,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-trait"
+version = "0.1.86"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "644dd749086bf3771a2fbc5f256fdb982d53f011c7d5d560304eafeecebce79d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -314,6 +325,7 @@ name = "p2p-tls"
 version = "0.1.0"
 dependencies = [
  "aes-gcm",
+ "async-trait",
  "hkdf",
  "rand",
  "sha2",
