@@ -31,20 +31,20 @@ impl<T> P2pTls<T> {
             .expect("decryption failed")
     }
 }
-pub struct Keys {
+pub(crate) struct Keys {
     secret: EphemeralSecret,
     pub public: PublicKey,
 }
 
 impl Keys {
-    pub fn generate_keys() -> Self {
+    pub(crate) fn generate_keys() -> Self {
         let rng = rand::thread_rng();
         let secret = EphemeralSecret::random_from_rng(rng);
         let public = PublicKey::from(&secret);
         Self { secret, public }
     }
 
-    pub fn generate_encryption_key(self, their_public: &PublicKey) -> Key<Aes256Gcm> {
+    pub(crate) fn generate_encryption_key(self, their_public: &PublicKey) -> Key<Aes256Gcm> {
         let shared_secret = self.secret.diffie_hellman(their_public).to_bytes();
         let hk = Hkdf::<Sha256>::new(None, &shared_secret);
         let mut key = [0u8; 32];

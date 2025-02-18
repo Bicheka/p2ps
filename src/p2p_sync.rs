@@ -5,7 +5,7 @@ use aes_gcm::{Aes256Gcm, Key};
 use crate::P2pTls;
 
 impl<T: Read + Write> P2pTls<T> {
-    pub fn new(stream: T, key: Key<Aes256Gcm>) -> Self {
+    fn new(stream: T, key: Key<Aes256Gcm>) -> Self {
         Self { stream, key }
     }
 

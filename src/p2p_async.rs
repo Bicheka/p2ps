@@ -4,12 +4,12 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use crate::P2pTls;
 
 impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
-    pub fn new_async(stream: T, key: Key<Aes256Gcm>) -> Self {
+    fn new_async(stream: T, key: Key<Aes256Gcm>) -> Self {
         Self { stream, key }
     }
 
-    // TODO:Handshake function to send and recieve public keys throught tcp
-
+    // Send and recieve public keys throught tcp
+    ///
     /// Takes data, encrypts it, and then writes a nonce, the length of the data and the actual data
     /// to the stream
     pub async fn write_async(&mut self, data: &[u8]) -> std::io::Result<()> {
