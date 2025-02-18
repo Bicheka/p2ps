@@ -3,10 +3,10 @@ use hkdf::Hkdf;
 use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
 
-/// Synchronoys implementation of P2pTls
+/// Synchronous implementation of P2pTls
 pub mod p2p_sync;
 
-/// Asynchronoys implementation of P2pTls
+/// Asynchronous implementation of P2pTls
 pub mod p2p_async;
 
 pub struct P2pTls<T> {
