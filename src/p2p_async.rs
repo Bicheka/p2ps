@@ -1,9 +1,9 @@
 use aes_gcm::{Aes256Gcm, Key};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::{Keys, P2pTls};
+use crate::{Keys, P2ps};
 
-impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
+impl<T: AsyncRead + AsyncWrite + Unpin> P2ps<T> {
     pub async fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
         // recieve their public key
         let mut buffer = [0u8; 32];
@@ -17,7 +17,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
 
         // create encryption key with private key and their public key
         let encryption_key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
-        // create P2pTls
+        // create P2ps
         Ok(Self::new_async(stream, encryption_key))
     }
 
@@ -35,7 +35,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
         // generate encryption key with private key and their public key
         let encryption_key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
 
-        // create P2pTls
+        // create P2ps
         Ok(Self::new_async(stream, encryption_key))
     }
 

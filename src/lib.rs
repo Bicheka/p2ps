@@ -5,18 +5,18 @@ use hkdf::Hkdf;
 use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-/// Synchronous implementation of P2pTls
+/// Synchronous implementation of P2ps
 pub mod p2p_sync;
 
-/// Asynchronous implementation of P2pTls
+/// Asynchronous implementation of P2ps
 pub mod p2p_async;
 
-pub struct P2pTls<T> {
+pub struct P2ps<T> {
     stream: T,
     key: Key<Aes256Gcm>,
 }
 
-impl<T> P2pTls<T> {
+impl<T> P2ps<T> {
     fn encrypt(&self, input_data: &[u8]) -> (Vec<u8>, [u8; 12]) {
         let nonce = [0u8; 12];
         let cipher = Aes256Gcm::new(&self.key);

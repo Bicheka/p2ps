@@ -2,9 +2,9 @@ use std::io::{Read, Write};
 
 use aes_gcm::{Aes256Gcm, Key};
 
-use crate::P2pTls;
+use crate::P2ps;
 
-impl<T: Read + Write> P2pTls<T> {
+impl<T: Read + Write> P2ps<T> {
     fn new_sync(stream: T, key: Key<Aes256Gcm>) -> Self {
         Self { stream, key }
     }
