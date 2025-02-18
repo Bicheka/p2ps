@@ -1,5 +1,5 @@
 [package]
-name = "p2p-tls"
+name = "p2ps"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"

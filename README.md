@@ -1,7 +1,7 @@
-# p2p-tls
+# p2ps
 
 ### 📌 Overview
-**p2p-tls** is a Rust library designed to make it easy to establish a secure connection between two peers using the ****Diffie-Hellman algorithm****, without requiring certificates or complex setup.
+**p2ps** is a Rust library designed to make it easy to establish a secure connection between two peers using the ****Diffie-Hellman algorithm****, without requiring certificates or complex setup.
 
 ### 🚀 Objective
 The goal of this project is to provide a simple and efficient way to create encrypted peer-to-peer connections without relying on external authorities.
