@@ -33,20 +33,20 @@ impl<T> P2ps<T> {
             .expect("decryption failed")
     }
 }
-pub(crate) struct Keys {
+pub struct Keys {
     secret: EphemeralSecret,
     pub public: PublicKey,
 }
 
 impl Keys {
-    pub(crate) fn generate_keys() -> Self {
+    fn generate_keys() -> Self {
         let rng = rand::thread_rng();
         let secret = EphemeralSecret::random_from_rng(rng);
         let public = PublicKey::from(&secret);
         Self { secret, public }
     }
 
-    pub(crate) fn generate_encryption_key(self, their_public: &PublicKey) -> Key<Aes256Gcm> {
+    fn generate_encryption_key(self, their_public: &PublicKey) -> Key<Aes256Gcm> {
         let shared_secret = self.secret.diffie_hellman(their_public).to_bytes();
         let hk = Hkdf::<Sha256>::new(None, &shared_secret);
         let mut key = [0u8; 32];
@@ -54,11 +54,11 @@ impl Keys {
         Key::<Aes256Gcm>::from_slice(&key).to_owned()
     }
 
-    pub(crate) fn public_key_from_bytes(public_key: [u8; 32]) -> io::Result<PublicKey> {
+    fn public_key_from_bytes(public_key: [u8; 32]) -> io::Result<PublicKey> {
         Ok(PublicKey::try_from(public_key)
             .expect("Could not convert from byte array into PublicKey"))
     }
-    pub(crate) fn get_public_key_bytes(&self) -> [u8; 32] {
+    fn get_public_key_bytes(&self) -> [u8; 32] {
         *self.public.as_bytes()
     }
 }
