@@ -1,3 +1,5 @@
+use std::io;
+
 use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use hkdf::Hkdf;
 use sha2::Sha256;
@@ -50,5 +52,13 @@ impl Keys {
         let mut key = [0u8; 32];
         hk.expand(b"encryption key", &mut key).expect("HDKF failed");
         Key::<Aes256Gcm>::from_slice(&key).to_owned()
+    }
+
+    pub(crate) fn public_key_from_bytes(public_key: [u8; 32]) -> io::Result<PublicKey> {
+        Ok(PublicKey::try_from(public_key)
+            .expect("Could not convert from byte array into PublicKey"))
+    }
+    pub(crate) fn get_public_key_bytes(&self) -> [u8; 32] {
+        *self.public.as_bytes()
     }
 }

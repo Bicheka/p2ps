@@ -1,15 +1,48 @@
 use aes_gcm::{Aes256Gcm, Key};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::P2pTls;
+use crate::{Keys, P2pTls};
 
 impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
+    pub async fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
+        // recieve their public key
+        let mut buffer = [0u8; 32];
+        stream.read(&mut buffer).await?;
+
+        // generate private and public keys
+        let keys = Keys::generate_keys();
+
+        // send public generated public key
+        stream.write_all(&keys.get_public_key_bytes()).await?;
+
+        // create encryption key with private key and their public key
+        let encryption_key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
+        // create P2pTls
+        Ok(Self::new_async(stream, encryption_key))
+    }
+
+    pub async fn send_handshake(mut stream: T) -> std::io::Result<Self> {
+        // generate private and public keys
+        let keys = Keys::generate_keys();
+
+        // send public key
+        stream.write_all(&keys.get_public_key_bytes()).await?;
+
+        // listen for response with their public key
+        let mut buffer = [0u8; 32];
+        stream.read(&mut buffer).await?;
+
+        // generate encryption key with private key and their public key
+        let encryption_key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
+
+        // create P2pTls
+        Ok(Self::new_async(stream, encryption_key))
+    }
+
     fn new_async(stream: T, key: Key<Aes256Gcm>) -> Self {
         Self { stream, key }
     }
 
-    // Send and recieve public keys throught tcp
-    ///
     /// Takes data, encrypts it, and then writes a nonce, the length of the data and the actual data
     /// to the stream
     pub async fn write_async(&mut self, data: &[u8]) -> std::io::Result<()> {
