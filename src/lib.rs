@@ -5,8 +5,8 @@ use hkdf::Hkdf;
 use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-/// Synchronous implementation of P2ps
-pub mod p2p_sync;
+// Synchronous implementation of P2ps
+mod p2p_sync;
 
 /// Asynchronous implementation of P2ps
 pub mod p2p_async;
