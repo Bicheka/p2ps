@@ -1,7 +1,7 @@
 use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use hkdf::Hkdf;
 use sha2::Sha256;
-use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
+use x25519_dalek::{EphemeralSecret, PublicKey};
 
 /// Synchronous implementation of P2pTls
 pub mod p2p_sync;
@@ -14,6 +14,23 @@ pub struct P2pTls<T> {
     key: Key<Aes256Gcm>,
 }
 
+impl<T> P2pTls<T> {
+    fn encrypt(&self, input_data: &[u8]) -> (Vec<u8>, [u8; 12]) {
+        let nonce = [0u8; 12];
+        let cipher = Aes256Gcm::new(&self.key);
+        let encrypted_data = cipher
+            .encrypt(&nonce.into(), input_data)
+            .expect("Error encrypting data");
+        (encrypted_data, nonce)
+    }
+
+    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Vec<u8> {
+        let cipher = Aes256Gcm::new(&self.key);
+        cipher
+            .decrypt(Nonce::from_slice(nonce), encrypted_data)
+            .expect("decryption failed")
+    }
+}
 pub struct Keys {
     secret: EphemeralSecret,
     pub public: PublicKey,
@@ -34,20 +51,4 @@ impl Keys {
         hk.expand(b"encryption key", &mut key).expect("HDKF failed");
         Key::<Aes256Gcm>::from_slice(&key).to_owned()
     }
-}
-
-pub(crate) fn encrypt(key: &Key<Aes256Gcm>, input_data: &[u8]) -> (Vec<u8>, [u8; 12]) {
-    let nonce = [0u8; 12];
-    let cipher = Aes256Gcm::new(key);
-    let encrypted_data = cipher
-        .encrypt(&nonce.into(), input_data)
-        .expect("Error encrypting data");
-    (encrypted_data, nonce)
-}
-
-pub(crate) fn decrypt(key: &Key<Aes256Gcm>, encrypted_data: &[u8], nonce: &[u8; 12]) -> Vec<u8> {
-    let cipher = Aes256Gcm::new(key);
-    cipher
-        .decrypt(Nonce::from_slice(nonce), encrypted_data)
-        .expect("decryption failed")
 }

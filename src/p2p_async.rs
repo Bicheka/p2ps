@@ -1,7 +1,7 @@
-use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::{Aes256Gcm, Key};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::{decrypt, encrypt, P2pTls};
+use crate::P2pTls;
 
 impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
     pub fn new_async(stream: T, key: Key<Aes256Gcm>) -> Self {
@@ -13,7 +13,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
     /// Takes data, encrypts it, and then writes a nonce, the length of the data and the actual data
     /// to the stream
     pub async fn write_async(&mut self, data: &[u8]) -> std::io::Result<()> {
-        let (encrypted_data, nonce) = encrypt(&self.key, data);
+        let (encrypted_data, nonce) = self.encrypt(data);
         // send nonce
         self.stream.write_all(&nonce).await?;
 
@@ -41,7 +41,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> P2pTls<T> {
         let mut encrypted_data = vec![0u8; length];
         self.stream.read_exact(&mut encrypted_data).await?;
 
-        let data = decrypt(&self.key, &encrypted_data, &nonce_buf);
+        let data = self.decrypt(&encrypted_data, &nonce_buf);
 
         Ok(data)
     }
