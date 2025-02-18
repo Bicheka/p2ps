@@ -1,8 +1,13 @@
-# P2P-TLS 
-A library that provides functionality for p2p connections to use advance security features that ensure that the connections are secure
+# p2p-tls
 
-## Contribution
-Anyone that wants to contribute is more than welcomed.
+### 📌 Overview
+**p2p-tls** is a Rust library designed to make it easy to establish a secure connection between two peers using the ****Diffie-Hellman algorithm****, without requiring certificates or complex setup.
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### 🚀 Objective
+The goal of this project is to provide a simple and efficient way to create encrypted peer-to-peer connections without relying on external authorities.
+
+### 🤝 Looking for Contributors & Ideas
+This project is in active development, and I need help! Contributions are welcome, whether it's improving the implementation, fixing bugs, or adding new features. Feel free to open issues, submit pull requests, and share any new ideas that could improve the project.
+
+### 📄 License
+This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
