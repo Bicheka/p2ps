@@ -6,11 +6,14 @@ use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
 // Synchronous implementation of P2ps
-mod p2p_sync;
+/// Work In Progress! It may be incomplete and subject to change.
+#[cfg(debug_assertions)]
+pub mod p2p_sync;
 
 /// Asynchronous implementation of P2ps
 pub mod p2p_async;
 
+/// A struct for handling encrypted P2P communication.
 pub struct P2ps<T> {
     stream: T,
     key: Key<Aes256Gcm>,
@@ -33,6 +36,8 @@ impl<T> P2ps<T> {
             .expect("decryption failed")
     }
 }
+
+/// Keys needed for Diffie-Hellman key exchange
 pub struct Keys {
     secret: EphemeralSecret,
     pub public: PublicKey,
@@ -58,6 +63,7 @@ impl Keys {
         Ok(PublicKey::try_from(public_key)
             .expect("Could not convert from byte array into PublicKey"))
     }
+
     fn get_public_key_bytes(&self) -> [u8; 32] {
         *self.public.as_bytes()
     }
