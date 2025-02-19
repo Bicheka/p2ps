@@ -9,8 +9,8 @@ pub trait P2psAsync<T>: Sized
 where
     T: AsyncRead + AsyncWrite + Unpin + Send,
 {
-    async fn listen_handshake(mut stream: T) -> std::io::Result<Self>;
-    async fn send_handshake(mut stream: T) -> std::io::Result<Self>;
+    async fn listen_handshake(stream: T) -> std::io::Result<Self>;
+    async fn send_handshake(stream: T) -> std::io::Result<Self>;
     fn new(stream: T, key: Key<Aes256Gcm>) -> Self;
     async fn write(&mut self, data: &[u8]) -> std::io::Result<()>;
     async fn read(&mut self) -> std::io::Result<Vec<u8>>;
