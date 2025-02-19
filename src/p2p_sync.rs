@@ -4,7 +4,7 @@ use aes_gcm::{Aes256Gcm, Key};
 
 use crate::P2ps;
 
-trait P2psSync<T>: Sized
+pub trait P2psSync<T>: Sized
 where
     T: Read + Write,
 {
