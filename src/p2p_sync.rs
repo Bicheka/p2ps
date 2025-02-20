@@ -1,27 +1,41 @@
 #![allow(dead_code)]
 
+use crate::common::{Encryption, Keys};
+use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use std::io::{Read, Write};
 
-use aes_gcm::{Aes256Gcm, Key};
-
-use crate::{Keys, P2ps};
-
-pub trait P2psSync<T>: Sized
-where
-    T: Read + Write,
-{
-    fn listen_handshake(stream: T) -> std::io::Result<Self>;
-    fn send_handshake(stream: T) -> std::io::Result<Self>;
-    fn new(stream: T, key: Key<Aes256Gcm>) -> Self;
-    fn write(&mut self, data: &[u8]) -> std::io::Result<()>;
-    fn read(&mut self) -> std::io::Result<Vec<u8>>;
+/// A struct for handling encrypted P2P communication.
+pub struct P2psConn<T: Write + Read> {
+    stream: T,
+    key: Key<Aes256Gcm>,
 }
 
-impl<T> P2psSync<T> for P2ps<T>
+impl<T> Encryption for P2psConn<T>
 where
     T: Read + Write,
 {
-    fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
+    fn encrypt(&self, input_data: &[u8]) -> (Vec<u8>, [u8; 12]) {
+        let nonce = [0u8; 12];
+        let cipher = Aes256Gcm::new(&self.key);
+        let encrypted_data = cipher
+            .encrypt(&nonce.into(), input_data)
+            .expect("Error encrypting data");
+        (encrypted_data, nonce)
+    }
+
+    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Vec<u8> {
+        let cipher = Aes256Gcm::new(&self.key);
+        cipher
+            .decrypt(Nonce::from_slice(nonce), encrypted_data)
+            .expect("decryption failed")
+    }
+}
+
+impl<T> P2psConn<T>
+where
+    T: Read + Write,
+{
+    pub fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
         // recieve their public key
         let mut buffer = [0u8; 32];
         stream.read(&mut buffer)?;
@@ -38,19 +52,19 @@ where
         Ok(Self::new(stream, encryption_key))
     }
 
-    fn send_handshake(mut stream: T) -> std::io::Result<Self> {
+    pub fn send_handshake(mut stream: T) -> std::io::Result<Self> {
         todo!()
     }
 
-    fn new(stream: T, key: Key<Aes256Gcm>) -> Self {
+    pub fn new(stream: T, key: Key<Aes256Gcm>) -> Self {
         todo!()
     }
 
-    fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
+    pub fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
         todo!()
     }
 
-    fn read(&mut self) -> std::io::Result<Vec<u8>> {
+    pub fn read(&mut self) -> std::io::Result<Vec<u8>> {
         todo!()
     }
 }

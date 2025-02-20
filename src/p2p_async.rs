@@ -1,26 +1,37 @@
-use async_trait::async_trait;
+use crate::common::{Encryption, Keys};
+use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::{Keys, P2ps};
-
-#[async_trait]
-pub trait P2psAsync<T>: Sized
-where
-    T: AsyncRead + AsyncWrite + Unpin + Send,
-{
-    async fn listen_handshake(stream: T) -> std::io::Result<Self>;
-    async fn send_handshake(stream: T) -> std::io::Result<Self>;
-    async fn write(&mut self, data: &[u8]) -> std::io::Result<()>;
-    async fn read(&mut self) -> std::io::Result<Vec<u8>>;
+/// A struct for handling encrypted P2P communication asynchronously.
+pub struct P2psConnAsync<T: AsyncRead + AsyncWrite + Unpin + Send> {
+    stream: T,
+    key: Key<Aes256Gcm>,
 }
 
-#[async_trait]
-impl<T> P2psAsync<T> for P2ps<T>
+impl<T> Encryption for P2psConnAsync<T>
 where
     T: AsyncRead + AsyncWrite + Unpin + Send,
 {
+    fn encrypt(&self, input_data: &[u8]) -> (Vec<u8>, [u8; 12]) {
+        let nonce = [0u8; 12];
+        let cipher = Aes256Gcm::new(&self.key);
+        let encrypted_data = cipher
+            .encrypt(&nonce.into(), input_data)
+            .expect("Error encrypting data");
+        (encrypted_data, nonce)
+    }
+
+    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Vec<u8> {
+        let cipher = Aes256Gcm::new(&self.key);
+        cipher
+            .decrypt(Nonce::from_slice(nonce), encrypted_data)
+            .expect("decryption failed")
+    }
+}
+
+impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
     /// Listens for an incomming handshake, sends back a public key and creates a P2ps
-    async fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
+    pub async fn listen_handshake_async(mut stream: T) -> std::io::Result<Self> {
         // recieve their public key
         let mut buffer = [0u8; 32];
         stream.read(&mut buffer).await?;
@@ -39,7 +50,7 @@ where
 
     /// Sends handshake to peer and once the peers responds with its public key it generates and
     /// encryption key which it uses to constuct a P2ps
-    async fn send_handshake(mut stream: T) -> std::io::Result<Self> {
+    pub async fn send_handshake_async(mut stream: T) -> std::io::Result<Self> {
         // generate private and public keys
         let keys = Keys::generate_keys();
 
@@ -58,7 +69,7 @@ where
     }
 
     /// Takes data, encrypts it, and then writes it to a buffer
-    async fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
+    pub async fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
         let (encrypted_data, nonce) = self.encrypt(data);
         // send nonce
         self.stream.write_all(&nonce).await?;
@@ -74,7 +85,7 @@ where
     }
 
     /// Reads data from a stream decrypts it returning the data
-    async fn read(&mut self) -> std::io::Result<Vec<u8>> {
+    pub async fn read_async(&mut self) -> std::io::Result<Vec<u8>> {
         // Read nonce
         let mut nonce_buf = [0u8; 12];
         self.stream.read_exact(&mut nonce_buf).await?;
