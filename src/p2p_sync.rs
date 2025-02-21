@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::common::{Encryption, Keys};
 use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use std::io::{Read, Write};
