@@ -31,7 +31,7 @@ where
 
 impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
     /// Listens for an incomming handshake asynchronously and sends back a public key and creates a P2psConnAsync
-    pub async fn listen_handshake_async(mut stream: T) -> std::io::Result<Self> {
+    pub async fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
         // recieve their public key
         let mut buffer = [0u8; 32];
         stream.read(&mut buffer).await?;
@@ -49,7 +49,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
     }
 
     /// Sends handshake to a peer and uses peer response to construct a P2psConnAsync
-    pub async fn send_handshake_async(mut stream: T) -> std::io::Result<Self> {
+    pub async fn send_handshake(mut stream: T) -> std::io::Result<Self> {
         // generate private and public keys
         let keys = Keys::generate_keys();
 
@@ -84,7 +84,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
     }
 
     /// Reads data from a stream decrypts it returning the data
-    pub async fn read_async(&mut self) -> std::io::Result<Vec<u8>> {
+    pub async fn read(&mut self) -> std::io::Result<Vec<u8>> {
         // Read nonce
         let mut nonce_buf = [0u8; 12];
         self.stream.read_exact(&mut nonce_buf).await?;
