@@ -4,7 +4,7 @@ use crate::common::{Encryption, Keys};
 use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use std::io::{Read, Write};
 
-/// A struct for handling encrypted P2P communication.
+/// Handles encrypted P2P communication.
 pub struct P2psConn<T: Write + Read> {
     stream: T,
     key: Key<Aes256Gcm>,
@@ -35,6 +35,7 @@ impl<T> P2psConn<T>
 where
     T: Read + Write,
 {
+    /// Listens for an incomming handshake and sends back a public key and creates a P2psConnAsync
     pub fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
         // recieve their public key
         let mut buffer = [0u8; 32];
@@ -52,6 +53,7 @@ where
         Ok(Self { stream, key })
     }
 
+    /// Sends handshake to a peer and uses peer response to construct a P2psConn
     pub fn send_handshake(mut stream: T) -> std::io::Result<Self> {
         // generate public and private keys
         let keys = Keys::generate_keys();
@@ -70,6 +72,7 @@ where
         Ok(Self { stream, key })
     }
 
+    /// takes data, encrypts it and sends it to the peer
     pub fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
         let (encrypted_data, nonce) = self.encrypt(data);
 
@@ -84,6 +87,7 @@ where
         Ok(())
     }
 
+    /// Reads data sent from peer and decrypts it
     pub fn read(&mut self) -> std::io::Result<Vec<u8>> {
         let mut nonce_buf = [0u8; 12];
         self.stream.read_exact(&mut nonce_buf)?;

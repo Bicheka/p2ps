@@ -2,7 +2,7 @@ use crate::common::{Encryption, Keys};
 use aes_gcm::{aead::Aead, Aes256Gcm, Key, KeyInit, Nonce};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-/// A struct for handling encrypted P2P communication asynchronously.
+/// Handles encrypted P2P communication asynchronously.
 pub struct P2psConnAsync<T: AsyncRead + AsyncWrite + Unpin + Send> {
     stream: T,
     key: Key<Aes256Gcm>,
@@ -30,7 +30,7 @@ where
 }
 
 impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
-    /// Listens for an incomming handshake, sends back a public key and creates a P2ps
+    /// Listens for an incomming handshake asynchronously and sends back a public key and creates a P2psConnAsync
     pub async fn listen_handshake_async(mut stream: T) -> std::io::Result<Self> {
         // recieve their public key
         let mut buffer = [0u8; 32];
@@ -48,8 +48,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         Ok(Self { stream, key })
     }
 
-    /// Sends handshake to peer and once the peers responds with its public key it generates and
-    /// encryption key which it uses to constuct a P2ps
+    /// Sends handshake to a peer and uses peer response to construct a P2psConnAsync
     pub async fn send_handshake_async(mut stream: T) -> std::io::Result<Self> {
         // generate private and public keys
         let keys = Keys::generate_keys();
@@ -68,7 +67,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         Ok(Self { stream, key })
     }
 
-    /// Takes data, encrypts it, and then writes it to a buffer
+    /// Takes data, encrypts it, and sends it to the peer
     pub async fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
         let (encrypted_data, nonce) = self.encrypt(data);
         // send nonce
