@@ -47,24 +47,57 @@ where
         stream.write_all(&keys.get_public_key_bytes())?;
 
         // create encryption key with private key and their public key
-        let encryption_key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
+        let key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
         // create P2ps
-        Ok(Self::new(stream, encryption_key))
+        Ok(Self { stream, key })
     }
 
     pub fn send_handshake(mut stream: T) -> std::io::Result<Self> {
-        todo!()
-    }
+        // generate public and private keys
+        let keys = Keys::generate_keys();
 
-    pub fn new(stream: T, key: Key<Aes256Gcm>) -> Self {
-        todo!()
+        // send public key
+        stream.write_all(&keys.get_public_key_bytes())?;
+
+        // listen for response with their public key
+        let mut buffer = [0u8; 32];
+        stream.read(&mut buffer)?;
+
+        // generate encryption key with the private key and their public key
+        let key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?);
+
+        // Create a P2psConn
+        Ok(Self { stream, key })
     }
 
     pub fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
-        todo!()
+        let (encrypted_data, nonce) = self.encrypt(data);
+
+        self.stream.write_all(&nonce)?;
+
+        let length = (encrypted_data.len() as u32).to_be_bytes();
+        self.stream.write_all(&length)?;
+
+        self.stream.write_all(&encrypted_data)?;
+        self.stream.flush()?;
+
+        Ok(())
     }
 
     pub fn read(&mut self) -> std::io::Result<Vec<u8>> {
-        todo!()
+        let mut nonce_buf = [0u8; 12];
+        self.stream.read_exact(&mut nonce_buf)?;
+
+        let mut length_buf = [0u8; 4];
+
+        self.stream.read_exact(&mut length_buf)?;
+        let length = u32::from_be_bytes(length_buf) as usize;
+
+        let mut encrypted_data = vec![0u8; length];
+        self.stream.read_exact(&mut encrypted_data)?;
+
+        let data = self.decrypt(&encrypted_data, &nonce_buf);
+
+        Ok(data)
     }
 }
