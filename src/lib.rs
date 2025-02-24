@@ -8,7 +8,7 @@
 //! use std::net::TcpListener;
 //! use p2ps::P2psConn;
 //!
-//! let listener = TcpListener::bind("peer_b_address:port")?;
+//! let listener = TcpListener::bind("peer_a_address:port")?;
 //! let (mut stream, _) = listener.accept()?; // Accept the incoming connection.
 //!
 //! let mut p2ps_conn = P2psConn::listen_handshake(stream)?;
