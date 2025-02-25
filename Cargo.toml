@@ -19,4 +19,4 @@ tokio = {version = "1.42.0", features = ["io-util"]}
 x25519-dalek = "2.0.1"
 
 [dev-dependencies]
-tokio = {version = "1.42.0", featurf = ["full"]}
+tokio = {version = "1.42.0", features = ["full"]}
