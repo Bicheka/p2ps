@@ -33,9 +33,9 @@ impl<T> P2psConn<T>
 where
     T: Read + Write,
 {
-    /// Listens for an incomming handshake and sends back a public key and creates a P2psConnAsync
+    /// Listens for an incoming handshake and sends back a public key and creates a P2psConnAsync
     pub fn listen_handshake(mut stream: T) -> std::io::Result<Self> {
-        // recieve their public key
+        // receive their public key
         let mut buffer = [0u8; 32];
         stream.read(&mut buffer)?;
 

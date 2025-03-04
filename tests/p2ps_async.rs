@@ -9,7 +9,7 @@ use tokio::{
 async fn transfer_data() {
     let addr = "127.0.0.1:7777";
 
-    // Create a oneshot channel for server readiness notification
+    // Create an oneshot channel for server readiness notification
     let (tx, rx) = oneshot::channel::<()>();
 
     // Start the server and pass the sender end of the oneshot channel

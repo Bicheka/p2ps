@@ -44,9 +44,11 @@
 //! println!("Received data: {}", String::from_utf8_lossy(&decrypted_data)); // Print the decrypted data as a string.
 //! ```
 
+//noinspection ALL
 // Synchronous implementation of P2ps
 mod p2p_sync;
 
+//noinspection ALL
 // Asynchronous implementation of P2ps
 mod p2p_async;
 
