@@ -83,8 +83,8 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         Ok(())
     }
 
-    /// Reads data from a stream decrypts it returning the data
-    pub async fn read(&mut self) -> std::io::Result<Vec<u8>> {
+    /// Reads data from a stream decrypts it returning the data and len
+    pub async fn read_len(&mut self) -> std::io::Result<(Vec<u8>, usize)> {
         // Read nonce
         let mut nonce_buf = [0u8; 12];
         self.stream.read_exact(&mut nonce_buf).await?;
@@ -100,6 +100,31 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
 
         let data = self.decrypt(&encrypted_data, &nonce_buf);
 
+        Ok((data, length))
+    }
+
+    /// Reads data from a stream decrypts it returning the data and len
+    pub async fn read(&mut self) -> std::io::Result<Vec<u8>> {
+        let (data, _) = self.read_len().await?;
         Ok(data)
+    }
+
+    /// Reads data from a stream decrypts it then writes it to a provided slice.
+    /// The slice will remain unmodified if any error occurs.
+    pub async fn read_to_slice(&mut self, slice: &mut [u8]) -> std::io::Result<()> {
+        let (data, len) = self.read_len().await?;
+        if len <= slice.len() {
+            slice[..len].copy_from_slice(&data[..len]);
+            Ok(())
+        } else {
+            Err(std::io::Error::new(std::io::ErrorKind::Other, "Provided slice cannot fit data from read"))
+        }
+    }
+
+    /// Reads data from a stream decrypts it then writes it to a Vec
+    pub async fn read_to_buf(&mut self, buf: &mut Vec<u8>) -> std::io::Result<()> {
+        let (data, _) = self.read_len().await?;
+        buf.extend(data);
+        Ok(())
     }
 }
