@@ -84,7 +84,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
     }
 
     /// Reads data from a stream decrypts it returning the data and len
-    pub async fn read_len(&mut self) -> std::io::Result<(Vec<u8>, usize)> {
+    async fn read_len(&mut self) -> std::io::Result<(Vec<u8>, usize)> {
         // Read nonce
         let mut nonce_buf = [0u8; 12];
         self.stream.read_exact(&mut nonce_buf).await?;
