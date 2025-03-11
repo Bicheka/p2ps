@@ -7,7 +7,7 @@ fn transfer_data_sync() {
     start_test_server(ip);
 
     let stream = TcpStream::connect(ip).expect(&format!("Could not connect to ip {}", ip));
-    let mut p2ps_conn = P2psConn::send_handshake(stream).expect("Could not stablish handshake");
+    let mut p2ps_conn = P2psConn::send_handshake(stream).expect("Could not establish handshake");
     let decrypted_data = p2ps_conn.read().expect("Error reading encrypted data");
 
     assert_eq!(decrypted_data, b"Hello there!");
@@ -22,7 +22,7 @@ fn start_test_server(address: &str) {
             match stream {
                 Ok(stream) => {
                     let mut p2ps_conn = P2psConn::listen_handshake(stream)
-                        .expect("Error listening stream for incomming handshake");
+                        .expect("Error listening stream for incoming handshake");
                     let data = b"Hello there!";
                     p2ps_conn.write(data).expect("Error writing data to peer");
                 }
