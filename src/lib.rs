@@ -47,7 +47,6 @@
 // Synchronous implementation of P2ps
 mod p2p_sync;
 
-//noinspection ALL
 // Asynchronous implementation of P2ps
 mod p2p_async;
 
