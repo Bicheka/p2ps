@@ -37,7 +37,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         stream.write_all(&keys.get_public_key_bytes()).await?;
 
         // create encryption key with private key and their public key
-        let key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?)?;
+        let key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer))?;
         // create P2ps
         Ok(Self {
             stream,
