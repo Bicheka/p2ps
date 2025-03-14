@@ -52,6 +52,13 @@ mod p2p_async;
 
 mod common;
 
+mod errors;
+
+#[cfg(feature = "zstd")]
+mod compression;
+mod p2ps_conn_common;
+
 // Flatten
+pub use errors::{Error, Result};
 pub use p2p_async::P2psConnAsync;
 pub use p2p_sync::P2psConn;

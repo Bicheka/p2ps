@@ -1,18 +1,38 @@
+use crate::{Error, Result};
 use aes_gcm::{Aes256Gcm, Key};
 use hkdf::Hkdf;
+use rand_chacha::rand_core::{RngCore, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 use sha2::Sha256;
-use std::io;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
 pub(crate) trait Encryption {
-    fn encrypt(&self, input_data: &[u8]) -> (Vec<u8>, [u8; 12]);
-    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Vec<u8>;
+    fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])>;
+    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Result<Vec<u8>>;
+}
+
+/// Handles (de)compression
+pub(crate) trait Compressor {
+    fn compress(&self, data: &[u8]) -> Vec<u8>;
+    fn decompress(&self, data: &[u8]) -> Result<Vec<u8>>;
+}
+
+pub(crate) struct BypassCompressor;
+
+impl Compressor for BypassCompressor {
+    fn compress(&self, data: &[u8]) -> Vec<u8> {
+        data.to_vec()
+    }
+    fn decompress(&self, data: &[u8]) -> Result<Vec<u8>> {
+        Ok(data.to_vec())
+    }
 }
 
 /// Keys needed for Diffie-Hellman key exchange
 pub struct Keys {
     secret: EphemeralSecret,
     pub public: PublicKey,
+    srng: Option<ChaCha20Rng>,
 }
 
 impl Keys {
@@ -20,20 +40,32 @@ impl Keys {
         let rng = rand::thread_rng();
         let secret = EphemeralSecret::random_from_rng(rng);
         let public = PublicKey::from(&secret);
-        Self { secret, public }
+        Self {
+            secret,
+            public,
+            srng: None,
+        }
     }
 
-    pub(crate) fn generate_encryption_key(self, their_public: &PublicKey) -> Key<Aes256Gcm> {
+    pub(crate) fn generate_encryption_key(
+        mut self,
+        their_public: &PublicKey,
+    ) -> Result<Key<Aes256Gcm>> {
         let shared_secret = self.secret.diffie_hellman(their_public).to_bytes();
+        let rng = ChaCha20Rng::from_seed(shared_secret);
+        self.srng = Some(rng);
         let hk = Hkdf::<Sha256>::new(None, &shared_secret);
         let mut key = [0u8; 32];
-        hk.expand(b"encryption key", &mut key).expect("HDKF failed");
-        Key::<Aes256Gcm>::from_slice(&key).to_owned()
+        let mut salt = [0u8; 16];
+        self.srng.unwrap().fill_bytes(&mut salt);
+        if let Err(e) = hk.expand(&salt, &mut key) {
+            return Err(Error::KDFError(e));
+        }
+        Ok(Key::<Aes256Gcm>::from_slice(&key).to_owned())
     }
 
-    pub(crate) fn public_key_from_bytes(public_key: [u8; 32]) -> io::Result<PublicKey> {
-        Ok(PublicKey::try_from(public_key)
-            .expect("Could not convert from byte array into PublicKey"))
+    pub(crate) fn public_key_from_bytes(public_key: [u8; 32]) -> PublicKey {
+        PublicKey::from(public_key)
     }
 
     pub(crate) fn get_public_key_bytes(&self) -> [u8; 32] {
