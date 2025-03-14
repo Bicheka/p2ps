@@ -64,9 +64,8 @@ impl Keys {
         Ok(Key::<Aes256Gcm>::from_slice(&key).to_owned())
     }
 
-    pub(crate) fn public_key_from_bytes(public_key: [u8; 32]) -> Result<PublicKey> {
-        // try from in this case is infallible
-        Ok(PublicKey::from(public_key))
+    pub(crate) fn public_key_from_bytes(public_key: [u8; 32]) -> PublicKey {
+        PublicKey::from(public_key)
     }
 
     pub(crate) fn get_public_key_bytes(&self) -> [u8; 32] {
