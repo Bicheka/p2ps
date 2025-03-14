@@ -57,7 +57,7 @@ where
         stream.read_exact(&mut buffer)?;
 
         // generate encryption key with the private key and their public key
-        let key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer)?)?;
+        let key = keys.generate_encryption_key(&Keys::public_key_from_bytes(buffer))?;
 
         // Create a P2psConn
         Ok(Self { stream, key })
