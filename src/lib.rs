@@ -54,8 +54,6 @@ mod common;
 
 mod errors;
 
-#[cfg(feature = "zstd")]
-mod compression;
 mod p2ps_conn_common;
 
 // Flatten

@@ -10,24 +10,6 @@ pub(crate) trait Encryption {
     fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])>;
     fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Result<Vec<u8>>;
 }
-
-/// Handles (de)compression
-pub(crate) trait Compressor {
-    fn compress(&self, data: &[u8]) -> Vec<u8>;
-    fn decompress(&self, data: &[u8]) -> Result<Vec<u8>>;
-}
-
-pub(crate) struct BypassCompressor;
-
-impl Compressor for BypassCompressor {
-    fn compress(&self, data: &[u8]) -> Vec<u8> {
-        data.to_vec()
-    }
-    fn decompress(&self, data: &[u8]) -> Result<Vec<u8>> {
-        Ok(data.to_vec())
-    }
-}
-
 /// Keys needed for Diffie-Hellman key exchange
 pub struct Keys {
     secret: EphemeralSecret,

@@ -1,6 +1,6 @@
 use crate::common::{Encryption, Keys};
 use crate::{Error, Result};
-use aes_gcm::{aead::Aead, Aes256Gcm, Key};
+use aes_gcm::{Aes256Gcm, Key};
 use std::io::{Read, Write};
 
 /// Handles encrypted P2P communication.

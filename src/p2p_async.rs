@@ -1,13 +1,12 @@
-use crate::common::{BypassCompressor, Compressor, Encryption, Keys};
+use crate::common::{Encryption, Keys};
 use crate::{Error, Result};
-use aes_gcm::{aead::Aead, Aes256Gcm, Key};
+use aes_gcm::{Aes256Gcm, Key};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 /// Handles encrypted P2P communication asynchronously.
 pub struct P2psConnAsync<T: AsyncRead + AsyncWrite + Unpin + Send> {
     stream: T,
     key: Key<Aes256Gcm>,
-    compressor: Box<dyn Compressor + Send>,
 }
 
 impl<T> Encryption for P2psConnAsync<T>
@@ -42,7 +41,6 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         Ok(Self {
             stream,
             key,
-            compressor: Box::from(BypassCompressor),
         })
     }
 
@@ -65,7 +63,6 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         Ok(Self {
             stream,
             key,
-            compressor: Box::from(BypassCompressor),
         })
     }
 
