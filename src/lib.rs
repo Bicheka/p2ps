@@ -44,11 +44,7 @@
 //! println!("Received data: {}", String::from_utf8_lossy(&decrypted_data)); // Print the decrypted data as a string.
 //! ```
 
-// Synchronous implementation of P2ps
-mod p2p_sync;
-
-// Asynchronous implementation of P2ps
-mod p2p_async;
+mod secure_conn;
 
 mod common;
 
@@ -58,5 +54,3 @@ mod p2ps_conn_common;
 
 // Flatten
 pub use errors::{Error, Result};
-pub use p2p_async::P2psConnAsync;
-pub use p2p_sync::P2psConn;
