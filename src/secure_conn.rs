@@ -1,18 +1,16 @@
 use crate::common::{Encryption, Keys};
 use crate::{Error, Result};
 use aes_gcm::{Aes256Gcm, Key};
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 
 /// Handles encrypted P2P communication asynchronously.
-pub struct P2psConnAsync<T: AsyncRead + AsyncWrite + Unpin + Send> {
-    stream: T,
+pub struct Secon {
+    stream: TcpStream,
     key: Key<Aes256Gcm>,
 }
 
-impl<T> Encryption for P2psConnAsync<T>
-where
-    T: AsyncRead + AsyncWrite + Unpin + Send,
-{
+impl Encryption for Secon {
     fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])> {
         crate::p2ps_conn_common::encrypt(&self.key, input_data)
     }
@@ -22,9 +20,9 @@ where
     }
 }
 
-impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
-    /// Listens for an incoming handshake asynchronously and sends back a public key and creates a P2psConnAsync
-    pub async fn listen_handshake(mut stream: T) -> Result<Self> {
+impl Secon {
+    /// Listens for an incoming handshake asynchronously and sends back a public key and creates a Secon
+    pub async fn listen_handshake(mut stream: TcpStream) -> Result<Self> {
         // receive their public key
         let mut buffer = [0u8; 32];
         stream.read_exact(&mut buffer).await?;
@@ -41,8 +39,8 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> P2psConnAsync<T> {
         Ok(Self { stream, key })
     }
 
-    /// Sends handshake to a peer and uses peer response to construct a P2psConnAsync
-    pub async fn send_handshake(mut stream: T) -> Result<Self> {
+    /// Sends handshake to a peer and uses peer response to construct a Secon
+    pub async fn send_handshake(mut stream: TcpStream) -> Result<Self> {
         // generate private and public keys
         let keys = Keys::generate_keys();
 

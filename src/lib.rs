@@ -54,3 +54,4 @@ mod p2ps_conn_common;
 
 // Flatten
 pub use errors::{Error, Result};
+pub use secure_conn::Secon;
