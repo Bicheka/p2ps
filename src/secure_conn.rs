@@ -4,13 +4,13 @@ use aes_gcm::{Aes256Gcm, Key};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-/// Handles encrypted P2P communication asynchronously.
-pub struct Secon {
+/// Handles encrypted network communication asynchronously.
+pub struct Seconn {
     stream: TcpStream,
     key: Key<Aes256Gcm>,
 }
 
-impl Encryption for Secon {
+impl Encryption for Seconn {
     fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])> {
         crate::p2ps_conn_common::encrypt(&self.key, input_data)
     }
@@ -20,7 +20,7 @@ impl Encryption for Secon {
     }
 }
 
-impl Secon {
+impl Seconn {
     /// Listens for an incoming handshake asynchronously and sends back a public key and creates a Secon
     pub async fn listen_handshake(mut stream: TcpStream) -> Result<Self> {
         // receive their public key

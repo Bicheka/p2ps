@@ -1,4 +1,4 @@
-use p2ps::{self, P2psConnAsync};
+use p2ps::{self, Seconn};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::oneshot,
@@ -23,7 +23,7 @@ async fn transfer_data() {
         .await
         .expect(&format!("Could not connect to address {}", addr));
 
-    let mut p2ps_conn = P2psConnAsync::send_handshake(stream)
+    let mut p2ps_conn = Seconn::send_handshake(stream)
         .await
         .expect("Could not send handshake to peer");
 
@@ -48,7 +48,7 @@ async fn start_server(addr: &str, tx: oneshot::Sender<()>) {
 
         while let Ok((stream, _)) = listener.accept().await {
             task::spawn(async move {
-                let mut p2ps_conn = P2psConnAsync::listen_handshake(stream)
+                let mut p2ps_conn = Seconn::listen_handshake(stream)
                     .await
                     .expect("Error listening for handshake");
 
