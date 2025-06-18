@@ -1,54 +1,72 @@
-//! # P2psConn Library Usage Example (Sync)
+//!  P2psConn Library Usage Example (Sync)
 //! This example demonstrates how to use the `P2psConn` struct for peer-to-peer communication. Using `P2psConnAsync` should be pretty much the same but the functions would be async so you would have to await them.
+
+//! # Example
 //!
-//! Peer A listens for an incoming connection and receives a handshake.
+//! This example demonstrates how to set up a secure peer-to-peer TCP connection. It involves starting a server that waits for an incoming
+//! connection and a client that initiates a secure handshake, sends data, and reads it.
+//! back securely.
 //!
-//! ```rust,ignore
-//! // -- Peer A --
-//! use std::net::TcpListener;
-//! use p2ps::P2psConn;
+//!#### Server
+//! ```rust
+//!#  use p2ps::{Seconn, Result};
+//!#  use tokio::{
+//!#      sync::oneshot,
+//!#      task,
+//!#  };
+//!#  
+//!# async fn start_server(addr: &str, tx: oneshot::Sender<()>) -> Result<()> {
+//!#     let addr = addr.to_string();
+//!#    task::spawn(async move {
+//!    let listener = tokio::net::TcpListener::bind(&addr).await.expect(&format!("Could not bind TcpListener to address {}", &addr));
+//! 
+//!#         // Notify the client that the server is ready
+//!#         tx.send(()).expect("Failed to send readiness signal");
+//!    // Accept incoming Tcp connection
+//!    while let Ok((stream, _)) = listener.accept().await {
+//!        task::spawn(async move {
+//!            // Listen for a secure connection (Seconn) handshake
+//!            let mut p2ps_conn = Seconn::listen_handshake(stream).await?;
 //!
-//! let listener = TcpListener::bind("peer_a_address:port")?;
-//! let (mut stream, _) = listener.accept()?; // Accept the incoming connection.
+//!            let data = b"Hello there!";
 //!
-//! let mut p2ps_conn = P2psConn::listen_handshake(stream)?;
-//! ```
+//!            // Since secure connection is stablished it can be use to send data securely
+//!            p2ps_conn.write(data).await?;
+//!            Ok::<(), p2ps::Error>(())
+//!        });
+//!    }
+//!#    });
+//!#     Ok(())
+//!# }
+//!```
+//!#### Client
+//!```
+//!#  #[tokio::test]
+//!#  async fn transfer_data() -> Result<()> {
+//!#     let addr = "127.0.0.1:7777";
+//!#     // Create a oneshot channel for server readiness notification
+//!#     let (tx, rx) = oneshot::channel::<()>();
+//!#     // Start the server and pass the sender end of the oneshot channel
+//!#     start_server(addr, tx).await;
+//!#     // Wait for the server to signal that it is ready
+//!#     rx.await.expect("Server failed to start");
+//!    // Now try connecting the server
+//!    let stream = tokio::net::TcpStream::connect(addr).await?;
 //!
-//! Peer B connects to Peer A and sends a handshake.
+//!    // Client and Server are now connected through a TCP stream
 //!
-//! ```rust,ignore
-//! // -- Peer B --
-//! use std::net::TcpStream;
-//! use p2p_secure::P2psConn;
+//!    // Client sends a handshake to stablish a secure connection
+//!    let mut p2ps_conn = Seconn::send_handshake(stream).await?;
 //!
-//! let stream = TcpStream::connect("peer_a_address:port")?;
+//!    // Read data from the encripted connection
+//!    let decrypted_data = p2ps_conn.read().await?;
 //!
-//! let mut p2ps_conn = P2psConn::send_handshake(&mut stream)?;
-//! ```
-//!
-//! After the handshake, both peers can use their `p2ps_conn` instance to share data.
-//!
-//! Peer A writes encrypted data to Peer B.
-//!
-//! ```rust,ignore
-//! // -- Peer A --
-//! let data = b"Hello, peer B!"; // Data to send to Peer B.
-//! p2ps_conn.write(data)?;
-//! ```
-//!
-//! Peer B reads and decrypts the data sent by Peer A.
-//!
-//! ```rust,ignore
-//! // -- Peer B --
-//! let decrypted_data = p2ps_conn.read()?; // Read and decrypt the data from Peer A.
-//! println!("Received data: {}", String::from_utf8_lossy(&decrypted_data)); // Print the decrypted data as a string.
+//!    assert_eq!(decrypted_data, b"Hello there!");
+//!#    Ok(())
+//!# }
 //! ```
 
-// Synchronous implementation of P2ps
-mod p2p_sync;
-
-// Asynchronous implementation of P2ps
-mod p2p_async;
+mod secure_conn;
 
 mod common;
 
@@ -58,5 +76,4 @@ mod p2ps_conn_common;
 
 // Flatten
 pub use errors::{Error, Result};
-pub use p2p_async::P2psConnAsync;
-pub use p2p_sync::P2psConn;
+pub use secure_conn::Seconn;

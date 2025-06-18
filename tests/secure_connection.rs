@@ -1,4 +1,4 @@
-use p2ps::{self, P2psConnAsync};
+use p2ps::Seconn;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::oneshot,
@@ -18,15 +18,19 @@ async fn transfer_data() {
     // Wait for the server to signal that it is ready
     rx.await.expect("Server failed to start");
 
-    // Now try connecting the client
+    // Now try connecting the server
     let stream = TcpStream::connect(addr)
         .await
         .expect(&format!("Could not connect to address {}", addr));
 
-    let mut p2ps_conn = P2psConnAsync::send_handshake(stream)
-        .await
-        .expect("Could not send handshake to peer");
+    // Client and Server are now connected through a TCP stream
 
+    // Client sends a handshake to stablish a secure connection
+    let mut p2ps_conn = Seconn::send_handshake(stream)
+        .await
+        .expect("Handshake failed!");
+
+    // Read data from the encripted connection
     let decrypted_data = p2ps_conn
         .read()
         .await
@@ -48,7 +52,7 @@ async fn start_server(addr: &str, tx: oneshot::Sender<()>) {
 
         while let Ok((stream, _)) = listener.accept().await {
             task::spawn(async move {
-                let mut p2ps_conn = P2psConnAsync::listen_handshake(stream)
+                let mut p2ps_conn = Seconn::listen_handshake(stream)
                     .await
                     .expect("Error listening for handshake");
 
