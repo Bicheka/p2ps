@@ -6,10 +6,6 @@ use rand_chacha::ChaCha20Rng;
 use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-pub(crate) trait Encryption {
-    fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])>;
-    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Result<Vec<u8>>;
-}
 /// Keys needed for Diffie-Hellman key exchange
 pub struct Keys {
     secret: EphemeralSecret,

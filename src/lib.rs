@@ -14,12 +14,12 @@
 //!#      sync::oneshot,
 //!#      task,
 //!#  };
-//!#  
+//!#
 //!# async fn start_server(addr: &str, tx: oneshot::Sender<()>) -> Result<()> {
 //!#     let addr = addr.to_string();
 //!#    task::spawn(async move {
 //!    let listener = tokio::net::TcpListener::bind(&addr).await.expect(&format!("Could not bind TcpListener to address {}", &addr));
-//! 
+//!
 //!#         // Notify the client that the server is ready
 //!#         tx.send(()).expect("Failed to send readiness signal");
 //!    // Accept incoming Tcp connection
@@ -67,12 +67,7 @@
 //! ```
 
 mod secure_conn;
-
-mod common;
-
 mod errors;
-
-mod p2ps_conn_common;
 
 // Flatten
 pub use errors::{Error, Result};

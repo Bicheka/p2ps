@@ -1,4 +1,7 @@
-use crate::common::{Encryption, Keys};
+mod encription;
+mod key;
+use encription::{Encryption, encrypt, decrypt};
+use key::Keys;
 use crate::{Error, Result};
 use aes_gcm::{Aes256Gcm, Key};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -12,11 +15,11 @@ pub struct Seconn {
 
 impl Encryption for Seconn {
     fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])> {
-        crate::p2ps_conn_common::encrypt(&self.key, input_data)
+        encrypt(&self.key, input_data)
     }
 
     fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Result<Vec<u8>> {
-        crate::p2ps_conn_common::decrypt(&self.key, encrypted_data, nonce)
+        decrypt(&self.key, encrypted_data, nonce)
     }
 }
 

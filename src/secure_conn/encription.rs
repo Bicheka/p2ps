@@ -1,6 +1,11 @@
-use crate::Error;
+use crate::{Error, Result};
 use aes_gcm::aead::Aead;
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce};
+
+pub(crate) trait Encryption {
+    fn encrypt(&self, input_data: &[u8]) -> Result<(Vec<u8>, [u8; 12])>;
+    fn decrypt(&self, encrypted_data: &[u8], nonce: &[u8; 12]) -> Result<Vec<u8>>;
+}
 
 pub(crate) fn encrypt(
     key: &Key<Aes256Gcm>,
