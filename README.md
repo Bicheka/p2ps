@@ -2,26 +2,25 @@
 
 **p2ps** is a Rust library designed to make it easy to establish a secure connection between two peers using the [Diffie-Hellman algorithm](https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange).
 
-## Usage example (Sync)
+## Usage example (see tests for better understanding)
 
 #### Peer A
 ```rust
-use std::net::TcpListener;
-use p2ps::P2psConn;
+use tokio::net::TcpListener;
+use p2ps::Seconn;
 
-let listener = TcpListener::bind("peer_a_address:port")?;
-let (mut stream, _) = listener.accept()?;
-let mut p2ps_conn = P2psConn::listen_handshake(stream)?;
+let listener = TcpListener::bind("127.0.0.1:7777").await?;
+let (stream, _) = listener.accept().await?;
+let mut p2ps_conn = Seconn::listen_handshake(stream).await?;
 ```
 
 #### Peer B
 ```rust
-use std::net::TcpStream;
-use p2p_secure::P2psConn;
+use tokio::net::TcpStream;
+use p2ps::Seconn;
 
-let stream = TcpStream::connect("peer_a_address:port")?;
-let mut p2ps_conn = P2psConn::send_handshake(&mut stream)?;
-
+let stream = TcpStream::connect("127.0.0.1:7777").await?;
+let mut p2ps_conn = Seconn::send_handshake(stream).await?;
 ```
 
 now both peers can use their p2ps_conn to share data
@@ -29,13 +28,13 @@ now both peers can use their p2ps_conn to share data
 #### Peer A
 ``` rust
 let data = b"Hello, peer B!";
-p2ps_conn.write(data)?;
+p2ps_conn.write(data).await?;
 ```
 
 #### Peer B
 ```rust
-let decrypted_data = p2ps_conn.read()?;
-println!("Received data: {}", String::from_utf8_lossy(&decrypted_data));
+let decrypted_data = p2ps_conn.read().await?;
+println!("Received: {}", String::from_utf8_lossy(&decrypted_data));
 ```
 
 ## Loking for Contributors & Ideas
