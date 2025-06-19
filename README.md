@@ -1,4 +1,9 @@
 # p2ps
+<div align="center">
+  <a href="https://crates.io/crates/p2ps">
+    <img src="https://img.shields.io/crates/v/p2ps.svg" alt="crates.io Latest Release"/>
+  </a>
+</div>
 
 **p2ps** is a Rust library designed to make it easy to establish a secure connection between two peers using the [Diffie-Hellman algorithm](https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange).
 
