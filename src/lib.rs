@@ -1,10 +1,23 @@
 use std::sync::Arc;
 use rcgen::generate_simple_self_signed;
-use rustls::{ClientConfig, ServerConfig, RootCertStore};
-use rustls::server::WebPkiClientVerifier;
+use rustls::{ClientConfig, ServerConfig};
+use sha2::{Digest, Sha256};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::{TlsAcceptor, TlsConnector, TlsStream};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
+
+use crate::fingerprint_client_verifier::FingerprintClientVerifier;
+use crate::fingerprint_server_verifier::FingerprintServerVerifier;
+pub mod fingerprint_server_verifier;
+pub mod fingerprint_client_verifier;
+
+
+pub fn get_cert_fingerprint(cert: &CertificateDer<'_>) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(cert.as_ref()); // Hash the raw DER bytes
+    let result = hasher.finalize();
+    hex::encode(result) // Returns a string like "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}
 
 pub struct SecureConn {
     pub stream: TlsStream<TcpStream>
@@ -16,8 +29,8 @@ impl SecureConn {
     }
 }
 
-pub fn generate_identity() -> anyhow::Result<(CertificateDer<'static>, PrivateKeyDer<'static>)> { 
-    let cert = generate_simple_self_signed(vec!["p2ps".into()])?; 
+pub fn generate_identity() -> anyhow::Result<(CertificateDer<'static>, PrivateKeyDer<'static>)> {
+    let cert = generate_simple_self_signed(vec!["p2ps".into()])?;
     Ok((cert.cert.into(), cert.signing_key.into()))
 }
 
@@ -26,18 +39,15 @@ pub async fn accept(
     listener: &TcpListener,
     server_cert: CertificateDer<'static>,
     server_key: PrivateKeyDer<'static>,
-    client_root_cert: CertificateDer<'static>, // Added: Who the server trusts
+    expected_client_hash: String, // Added: The string hash we expect from the client
 ) -> anyhow::Result<SecureConn> {
 
-    // Create a RootCertStore for the server to verify the client
-    let mut client_roots = RootCertStore::empty();
-    client_roots.add(client_root_cert)?;
+    // Build our custom verifier using the expected string hash
+    let verifier = Arc::new(FingerprintClientVerifier::new(expected_client_hash));
 
-    // Build the verifier
-    let verifier = WebPkiClientVerifier::builder(Arc::new(client_roots)).build()?;
-
+    // Configure the server to use it
     let config = ServerConfig::builder()
-        .with_client_cert_verifier(verifier) // Enforce mTLS
+        .with_client_cert_verifier(verifier) // Enforce our custom mTLS hash check
         .with_single_cert(vec![server_cert], server_key)?;
 
     let acceptor = TlsAcceptor::from(Arc::new(config));
@@ -50,17 +60,18 @@ pub async fn accept(
 // 2. Client-side: Now provides its own identity to the server
 pub async fn connect(
     addr: &str,
-    server_root_cert: CertificateDer<'static>, // Who the client trusts
+    expected_server_hash: String,
     client_cert: CertificateDer<'static>,      // Added: Client's identity
     client_key: PrivateKeyDer<'static>,        // Added: Client's key
 ) -> anyhow::Result<SecureConn> {
 
-    let mut roots = RootCertStore::empty();
-    roots.add(server_root_cert)?;
+    // Use our custom verifier
+    let verifier = Arc::new(FingerprintServerVerifier::new(expected_server_hash));
 
     let config = ClientConfig::builder()
-        .with_root_certificates(roots)
-        .with_client_auth_cert(vec![client_cert], client_key)?; // Provide identity
+        .dangerous() // Required to use custom verifiers
+        .with_custom_certificate_verifier(verifier)
+        .with_client_auth_cert(vec![client_cert], client_key)?;
 
     let connector = TlsConnector::from(Arc::new(config));
     let domain = "p2ps".try_into()?;
@@ -69,6 +80,7 @@ pub async fn connect(
 
     Ok(SecureConn::new(tokio_rustls::TlsStream::Client(tls_stream)))
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -76,25 +88,29 @@ mod tests {
 
     #[tokio::test]
     async fn test_mtls_connection() -> anyhow::Result<()> {
+
+        // This tells rustls to use 'ring' for all the heavy lifting (signing/verifying)
+        let _ = rustls::crypto::ring::default_provider().install_default();
+
         // 1. Generate separate identities for Server and Client
         let (server_cert, server_key) = generate_identity()?;
         let (client_cert, client_key) = generate_identity()?;
 
-        // We clone these because the server/client tasks will need to own them
-        let server_cert_for_client = server_cert.clone();
-        let client_cert_for_server = client_cert.clone();
+        // 2. Calculate the fingerprints (the "signatures" we will share)
+        let server_hash = get_cert_fingerprint(&server_cert);
+        let client_hash = get_cert_fingerprint(&client_cert);
 
-        // 2. Setup the Listener on a random local port
+        // 3. Setup the Listener on a random local port
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr()?;
 
-        // 3. Spawn the Server Task
+        // 4. Spawn the Server Task
         let server_handle = tokio::spawn(async move {
             let mut secure_conn = accept(
                 &listener,
                 server_cert,
                 server_key,
-                client_cert_for_server
+                client_hash, // The server only needs the string hash of the client
             ).await.expect("Server failed to accept");
 
             // Read message from client
@@ -106,10 +122,10 @@ mod tests {
             secure_conn.stream.write_all(b"Hello Client").await.unwrap();
         });
 
-        // 4. Run the Client Task
+        // 5. Run the Client Task
         let mut client_conn = connect(
             &addr.to_string(),
-            server_cert_for_client,
+            server_hash, // The client only needs the string hash of the server
             client_cert,
             client_key,
         ).await?;
@@ -122,7 +138,7 @@ mod tests {
         client_conn.stream.read_exact(&mut buf).await?;
         assert_eq!(&buf, b"Hello Client");
 
-        // 5. Clean up
+        // 6. Clean up
         server_handle.await?;
         Ok(())
     }
