@@ -4,13 +4,12 @@ use rustls::{ClientConfig, ServerConfig};
 use sha2::{Digest, Sha256};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::{TlsAcceptor, TlsConnector, TlsStream};
-use rustls::pki_types::{CertificateDer, PrivateKeyDer};
+pub use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 
 use crate::fingerprint_client_verifier::FingerprintClientVerifier;
 use crate::fingerprint_server_verifier::FingerprintServerVerifier;
 pub mod fingerprint_server_verifier;
 pub mod fingerprint_client_verifier;
-
 
 pub fn get_cert_fingerprint(cert: &CertificateDer<'_>) -> String {
     let mut hasher = Sha256::new();
