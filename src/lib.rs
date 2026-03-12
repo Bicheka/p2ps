@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::{TlsAcceptor, TlsConnector, TlsStream};
 pub use rustls::pki_types::{CertificateDer, PrivateKeyDer};
-
+pub use rustls::crypto::ring;
 use crate::fingerprint_client_verifier::FingerprintClientVerifier;
 use crate::fingerprint_server_verifier::FingerprintServerVerifier;
 pub mod fingerprint_server_verifier;
@@ -89,7 +89,7 @@ mod tests {
     async fn test_mtls_connection() -> anyhow::Result<()> {
 
         // This tells rustls to use 'ring' for all the heavy lifting (signing/verifying)
-        let _ = rustls::crypto::ring::default_provider().install_default();
+        let _ = ring::default_provider().install_default();
 
         // 1. Generate separate identities for Server and Client
         let (server_cert, server_key) = generate_identity()?;
