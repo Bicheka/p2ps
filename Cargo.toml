@@ -4,11 +4,9 @@ version = "1.0.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/Bicheka/p2ps"
-description = "Easy to implement security for p2p connections"
+description = "Easy to implement TLS security for p2p connections"
 keywords = ["p2p", "secure", "network", "tcp"]
 readme = "README.md"
-[badges]
-maintenance = { status = "actively-developed" }
 
 [dependencies]
 anyhow = "1.0.102"
