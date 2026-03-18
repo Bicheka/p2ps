@@ -11,6 +11,7 @@ use crate::fingerprint_server_verifier::FingerprintServerVerifier;
 pub mod fingerprint_server_verifier;
 pub mod fingerprint_client_verifier;
 
+/// Creates a hash out of a cert
 pub fn get_cert_fingerprint(cert: &CertificateDer<'_>) -> String {
     let mut hasher = Sha256::new();
     hasher.update(cert.as_ref()); // Hash the raw DER bytes
@@ -18,6 +19,7 @@ pub fn get_cert_fingerprint(cert: &CertificateDer<'_>) -> String {
     hex::encode(result) // Returns a string like "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 }
 
+/// TLS Wrapper
 pub struct SecureConn {
     pub stream: TlsStream<TcpStream>
 }
@@ -28,12 +30,13 @@ impl SecureConn {
     }
 }
 
+/// Generates self signer cert and private key
 pub fn generate_identity() -> anyhow::Result<(CertificateDer<'static>, PrivateKeyDer<'static>)> {
     let cert = generate_simple_self_signed(vec!["p2ps".into()])?;
     Ok((cert.cert.into(), cert.signing_key.into()))
 }
 
-// 1. Server-side: Now requires client_root to verify the incoming client cert
+/// Accepts an incomming request, upon aceptance a tls secured connection is created and ready to use
 pub async fn accept(
     listener: &TcpListener,
     server_cert: CertificateDer<'static>,
@@ -56,7 +59,7 @@ pub async fn accept(
     Ok(SecureConn::new(tokio_rustls::TlsStream::Server(tls_stream)))
 }
 
-// 2. Client-side: Now provides its own identity to the server
+/// Request connection, upon connection a tls secured connection is created and ready to use
 pub async fn connect(
     addr: &str,
     expected_server_hash: String,
@@ -91,25 +94,25 @@ mod tests {
         // This tells rustls to use 'ring' for all the heavy lifting (signing/verifying)
         let _ = ring::default_provider().install_default();
 
-        // 1. Generate separate identities for Server and Client
+        // Generate separate identities for Server and Client
         let (server_cert, server_key) = generate_identity()?;
         let (client_cert, client_key) = generate_identity()?;
 
-        // 2. Calculate the fingerprints (the "signatures" we will share)
+        // Calculate the fingerprints (the "signatures" we will share)
         let server_hash = get_cert_fingerprint(&server_cert);
         let client_hash = get_cert_fingerprint(&client_cert);
 
-        // 3. Setup the Listener on a random local port
+        // Setup the Listener
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr()?;
 
-        // 4. Spawn the Server Task
+        // Spawn the Server Task
         let server_handle = tokio::spawn(async move {
             let mut secure_conn = accept(
                 &listener,
                 server_cert,
                 server_key,
-                client_hash, // The server only needs the string hash of the client
+                client_hash,
             ).await.expect("Server failed to accept");
 
             // Read message from client
@@ -121,10 +124,10 @@ mod tests {
             secure_conn.stream.write_all(b"Hello Client").await.unwrap();
         });
 
-        // 5. Run the Client Task
+        // Run the Client Task
         let mut client_conn = connect(
             &addr.to_string(),
-            server_hash, // The client only needs the string hash of the server
+            server_hash,
             client_cert,
             client_key,
         ).await?;
@@ -137,7 +140,7 @@ mod tests {
         client_conn.stream.read_exact(&mut buf).await?;
         assert_eq!(&buf, b"Hello Client");
 
-        // 6. Clean up
+        // Clean up
         server_handle.await?;
         Ok(())
     }

@@ -25,17 +25,17 @@ impl FingerprintClientVerifier {
 impl ClientCertVerifier for FingerprintClientVerifier {
     // 1. Tell the client we want them to send a certificate
     fn offer_client_auth(&self) -> bool {
-        true 
+        true
     }
 
     // 2. Enforce that the client MUST send a certificate (mTLS)
     fn client_auth_mandatory(&self) -> bool {
-        true 
+        true
     }
 
     // 3. We have no Root CAs to give the client as a "hint"
     fn root_hint_subjects(&self) -> &[rustls::DistinguishedName] {
-        &[] 
+        &[]
     }
 
     // 4. Verify the client's certificate hash
@@ -45,7 +45,7 @@ impl ClientCertVerifier for FingerprintClientVerifier {
         _intermediates: &[CertificateDer<'_>],
         _now: UnixTime,
     ) -> Result<ClientCertVerified, Error> {
-        
+
         // Use the same hashing helper from the client example
         let computed_hash = get_cert_fingerprint(end_entity);
 
@@ -53,13 +53,13 @@ impl ClientCertVerifier for FingerprintClientVerifier {
             Ok(ClientCertVerified::assertion())
         } else {
             Err(Error::General(format!(
-                "Client Pinning failed! Expected {}, got {}", 
+                "Client Pinning failed! Expected {}, got {}",
                 self.expected_hex_hash, computed_hash
             )))
         }
     }
 
-    // 5. Delegate signature validation to the default cryptography provider 
+    // 5. Delegate signature validation to the default cryptography provider
     // to ensure the client actually holds the private key for this certificate.
     fn verify_tls12_signature(
         &self,
@@ -78,7 +78,7 @@ impl ClientCertVerifier for FingerprintClientVerifier {
     ) -> Result<HandshakeSignatureValid, Error> {
         rustls::crypto::verify_tls13_signature(message, cert, dss, &self.crypto_provider.signature_verification_algorithms)
     }
-    
+
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
         self.crypto_provider.signature_verification_algorithms.supported_schemes()
     }

@@ -11,3 +11,65 @@ A lightweight, async-first Rust library for establishing **Mutual TLS (mTLS)** c
 * **Async Ready:** Designed specifically for the `tokio` ecosystem.
 * **Simple API:** Wraps complex `rustls` configurations into straightforward `accept` and `connect` functions.
 
+## Usage example (to see a full working example in action check out [file-express](https://github.com/Bicheka/file-express))
+
+Set up crypto provider
+```rusthttps://github.com/Bicheka/file-express
+    let _ = ring::default_provider().install_default();
+```
+
+Peer A generates identity meaning cert and key, and generate fingerprint
+```rust
+    let (cert, key) = generate_identity()?;
+    let hash = get_cert_fingerprint(&cert);
+```
+
+Peer B does the same
+```rust
+    let (cert, key) = generate_identity()?;
+    let hash = get_cert_fingerprint(&cert);
+```
+
+**The hash must then be shared between them**
+
+Peer A
+```rust
+let listener = TcpListener::bind("127.0.0.1:0").await?;
+let addr = listener.local_addr()?;
+
+let mut secure_conn: SecureConn = accept(
+    &listener,
+    server_cert,
+    server_key,
+    client_hash,
+).await.expect("Server failed to accept");
+```
+
+Peer B
+```rust
+let mut secure_conn: SecureConn = connect(
+    &addr.to_string(),
+    server_hash,
+    client_cert,
+    client_key,
+).await?;
+```
+
+SecureConnection is a Tls wrapper
+```rust
+pub struct SecureConn {
+    pub stream: TlsStream<TcpStream>
+}
+```
+
+So you can use **secure_conn** variable like this for example
+```rust
+    secure_conn.stream.write_all(b"Hello Server").await?;
+
+    let mut buf = [0u8; 12];
+    secure_conn.stream.read_exact(&mut buf).await?;
+```
+
+License
+
+This project is licensed under the MIT License, see the [LICENSE](LICENSE) file for details.
