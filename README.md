@@ -1,8 +1,8 @@
 # P2P-Secure-Conn 🦀
+[<img alt="crates.io" src="https://img.shields.io/crates/v/p2ps.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/p2ps)
+
 
 A lightweight, async-first Rust library for establishing **Mutual TLS (mTLS)** connections. Built on top of `tokio-rustls` and `rustls`, it simplifies the process of generating self-signed identities and enforcing strict two-way authentication between peers.
-
-
 
 ## Features
 
@@ -10,6 +10,11 @@ A lightweight, async-first Rust library for establishing **Mutual TLS (mTLS)** c
 * **Self-Signed Friendly:** Built-in utility to generate x509 identities on the fly using `rcgen`.
 * **Async Ready:** Designed specifically for the `tokio` ecosystem.
 * **Simple API:** Wraps complex `rustls` configurations into straightforward `accept` and `connect` functions.
+
+## Add it to your project
+```bash
+cargo add p2ps
+```
 
 ## Usage example (to see a full working example in action check out [file-express](https://github.com/Bicheka/file-express))
 
